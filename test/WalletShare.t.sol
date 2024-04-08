@@ -32,6 +32,6 @@ contract WalletShareTest is PRBTest, StdCheats {
         foundationWallet = createActor("foundationWallet");
         adminWallet = createActor("adminWallet");
         // Instantiate the contract-under-test.
-        walletShare = new WalletShare(bobWallet, foundationWallet, adminWallet);
+        walletShare = new WalletShare(foundationWallet, adminWallet);
     }
 }
