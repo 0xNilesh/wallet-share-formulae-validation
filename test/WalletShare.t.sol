@@ -249,4 +249,61 @@ contract WalletShareTest is PRBTest, StdCheats {
         assertEq(totalSharesAfter, 138_888);
         assertEq(foundationWalletSharesAfter, 125_000);
     }
+
+    // FUZZ TESTS
+    function testFuzz_AddShares(address _walletAddress, DataTypes.Percentage calldata _percentage) public {
+        vm.assume(_percentage.percentageNumber > 0);
+        vm.assume(_percentage.decimalPlaces < 10);
+        // percentage must be less than 100
+        vm.assume(_percentage.percentageNumber / 10 ** _percentage.decimalPlaces < 100);
+        vm.prank(adminWallet);
+        walletShare.addWalletShare(_walletAddress, _percentage);
+    }
+
+    function testFuzz_RemoveShares(address _walletAddress, DataTypes.Percentage calldata _percentage) public {
+        vm.assume(_percentage.percentageNumber > 0);
+        vm.assume(_percentage.decimalPlaces < 10);
+        // percentage must be less than 100
+        vm.assume(_percentage.percentageNumber / 10 ** _percentage.decimalPlaces < 100);
+        testFuzz_AddShares(_walletAddress, _percentage);
+
+        vm.prank(adminWallet);
+        walletShare.removeWalletShareM2(_walletAddress);
+
+        assertEq(walletShare.walletTotalShares(), walletShare.shares(foundationWallet));
+    }
+
+    function testFuzz_IncreaseShares(address _walletAddress, DataTypes.Percentage calldata _percentage) public {
+        vm.assume(_percentage.percentageNumber > 0);
+        vm.assume(_percentage.decimalPlaces < 10);
+        // percentage must be less than 100
+        vm.assume(_percentage.percentageNumber / 10 ** _percentage.decimalPlaces < 100);
+        vm.assume((_percentage.percentageNumber + 1) / 10 ** (_percentage.decimalPlaces) < 100);
+        testFuzz_AddShares(_walletAddress, _percentage);
+
+        DataTypes.Percentage memory _newPercentage = DataTypes.Percentage({
+            percentageNumber: _percentage.percentageNumber + 1,
+            decimalPlaces: _percentage.decimalPlaces
+        });
+
+        vm.prank(adminWallet);
+        walletShare.increaseWalletShares(_walletAddress, _newPercentage);
+    }
+
+    function testFuzz_DecreaseShares(address _walletAddress, DataTypes.Percentage calldata _percentage) public {
+        vm.assume(_percentage.percentageNumber > 0);
+        vm.assume(_percentage.decimalPlaces < 10);
+        // percentage must be less than 100
+        vm.assume(_percentage.percentageNumber / 10 ** _percentage.decimalPlaces < 100);
+        vm.assume((_percentage.percentageNumber - 1) / 10 ** (_percentage.decimalPlaces) < 100);
+        testFuzz_AddShares(_walletAddress, _percentage);
+
+        DataTypes.Percentage memory _newPercentage = DataTypes.Percentage({
+            percentageNumber: _percentage.percentageNumber - 1,
+            decimalPlaces: _percentage.decimalPlaces
+        });
+
+        vm.prank(adminWallet);
+        walletShare.decreaseWalletSharesM2(_walletAddress, _newPercentage);
+    }
 }
