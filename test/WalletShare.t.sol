@@ -6,7 +6,6 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { WalletShare } from "../src/WalletShare.sol";
 import { DataTypes } from "../src/libs/Datatypes.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
 contract WalletShareTest is PRBTest, StdCheats {
     address payable public bobWallet;
