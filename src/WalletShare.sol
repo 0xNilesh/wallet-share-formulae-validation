@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23;
 
+import { DataTypes } from "./libs/Datatypes.sol";
+
 contract WalletShare {
     uint256 public walletTotalShares = 100_000;
     mapping(address wallet => uint256 sharesAmount) public shares;
     address public immutable OWNER;
     address public immutable FOUNDATION;
-
-    struct Percentage {
-        uint256 percentageNumber;
-        uint256 decimalPlaces;
-    }
 
     error NotAuthorized();
     error IncorrectPercentage();
@@ -33,7 +30,7 @@ contract WalletShare {
      */
     function getSharesAmount(
         uint256 _totalShares,
-        Percentage memory _percentage
+        DataTypes.Percentage memory _percentage
     )
         public
         pure
@@ -41,7 +38,7 @@ contract WalletShare {
     {
         if (_percentage.percentageNumber / 10 ^ _percentage.decimalPlaces >= 100) revert IncorrectPercentage();
         sharesToBeAllocated = (_percentage.percentageNumber * _totalShares)
-            / ((100 * (10 ^ _percentage.decimalPlaces)) - _percentage.percentageNumber);
+            / ((100 * (10 ** _percentage.decimalPlaces)) - _percentage.percentageNumber);
     }
 
     /**
@@ -54,7 +51,7 @@ contract WalletShare {
      * 0.001% => { percentageNumber = 1, decimalPlaces = 3 }
      * 0.4578% => { percentageNumber = 4578, decimalPlaces = 4 }
      */
-    function addWalletShare(address _walletAddress, Percentage memory _percentage) public onlyOwner {
+    function addWalletShare(address _walletAddress, DataTypes.Percentage memory _percentage) public onlyOwner {
         if (_percentage.percentageNumber / 10 ^ _percentage.decimalPlaces >= 100) revert IncorrectPercentage();
         uint256 sharesToBeAllocated = getSharesAmount(walletTotalShares, _percentage);
         walletTotalShares += sharesToBeAllocated;
@@ -86,7 +83,13 @@ contract WalletShare {
      * @param _walletAddress    wallet address whose allocation needs to be increased
      * @param _newPercentage     Percentage struct for new percentage share allocation of wallet
      */
-    function increaseWalletShares(address _walletAddress, Percentage memory _newPercentage) public onlyOwner {
+    function increaseWalletShares(
+        address _walletAddress,
+        DataTypes.Percentage memory _newPercentage
+    )
+        public
+        onlyOwner
+    {
         if (_newPercentage.percentageNumber / 10 ^ _newPercentage.decimalPlaces >= 100) revert IncorrectPercentage();
         uint256 allocatedWalletShares = shares[_walletAddress];
         // totalSharesParam as total shares excluding allocated to the wallet
@@ -103,7 +106,13 @@ contract WalletShare {
      * @param _walletAddress    wallet address whose allocation needs to be decreased
      * @param _newPercentage     Percentage struct for new percentage share allocation of wallet
      */
-    function decreaseWalletSharesM1(address _walletAddress, Percentage memory _newPercentage) public onlyOwner {
+    function decreaseWalletSharesM1(
+        address _walletAddress,
+        DataTypes.Percentage memory _newPercentage
+    )
+        public
+        onlyOwner
+    {
         if (_newPercentage.percentageNumber / 10 ^ _newPercentage.decimalPlaces >= 100) revert IncorrectPercentage();
 
         removeWalletShareM1(_walletAddress);
@@ -115,7 +124,13 @@ contract WalletShare {
      * @param _walletAddress    wallet address whose allocation needs to be decreased
      * @param _newPercentage     Percentage struct for new percentage share allocation of wallet
      */
-    function decreaseWalletSharesM2(address _walletAddress, Percentage memory _newPercentage) public onlyOwner {
+    function decreaseWalletSharesM2(
+        address _walletAddress,
+        DataTypes.Percentage memory _newPercentage
+    )
+        public
+        onlyOwner
+    {
         if (_newPercentage.percentageNumber / 10 ^ _newPercentage.decimalPlaces >= 100) revert IncorrectPercentage();
 
         removeWalletShareM2(_walletAddress);
