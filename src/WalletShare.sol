@@ -36,7 +36,9 @@ contract WalletShare {
         pure
         returns (uint256 sharesToBeAllocated)
     {
-        if (_percentage.percentageNumber / 10 ** _percentage.decimalPlaces >= 100) revert IncorrectPercentage();
+        //We will only need this check if we decide to out a threshold less than 100, otherwise it will by 
+        //default revert if passed hundred
+        // if (_percentage.percentageNumber> 100 && _percentage.decimalPlaces == 0 ) revert IncorrectPercentage();
         sharesToBeAllocated = (_percentage.percentageNumber * _totalShares)
             / ((100 * (10 ** _percentage.decimalPlaces)) - _percentage.percentageNumber);
     }
@@ -52,7 +54,6 @@ contract WalletShare {
      * 0.4578% => { percentageNumber = 4578, decimalPlaces = 4 }
      */
     function addWalletShare(address _walletAddress, DataTypes.Percentage memory _percentage) public onlyOwner {
-        if (_percentage.percentageNumber / 10 ** _percentage.decimalPlaces >= 100) revert IncorrectPercentage();
         uint256 sharesToBeAllocated = getSharesAmount(walletTotalShares, _percentage);
         walletTotalShares += sharesToBeAllocated;
         shares[_walletAddress] = sharesToBeAllocated;
@@ -63,8 +64,7 @@ contract WalletShare {
      * @param _walletAddress    wallet address that needs to be removed from allocation
      */
     function removeWalletShareM1(address _walletAddress) public onlyOwner {
-        uint256 walletShares = shares[_walletAddress];
-        walletTotalShares -= walletShares;
+        walletTotalShares -= shares[_walletAddress];
         shares[_walletAddress] = 0;
     }
 
@@ -73,8 +73,7 @@ contract WalletShare {
      * @param _walletAddress    wallet address that needs to be removed from allocation
      */
     function removeWalletShareM2(address _walletAddress) public onlyOwner {
-        uint256 walletShares = shares[_walletAddress];
-        shares[FOUNDATION] += walletShares;
+        shares[FOUNDATION] += shares[_walletAddress];
         shares[_walletAddress] = 0;
     }
 
@@ -90,14 +89,14 @@ contract WalletShare {
         public
         onlyOwner
     {
-        if (_newPercentage.percentageNumber / 10 ** _newPercentage.decimalPlaces >= 100) revert IncorrectPercentage();
         uint256 allocatedWalletShares = shares[_walletAddress];
         // totalSharesParam as total shares excluding allocated to the wallet
-        uint256 newWalletShares = getSharesAmount(walletTotalShares - allocatedWalletShares, _newPercentage);
+        uint256 newTotalShares = walletTotalShares - allocatedWalletShares;
+        uint256 newWalletShares = getSharesAmount(newTotalShares, _newPercentage);
 
         // new percentage is lower than already allocated shares%
         if (newWalletShares < allocatedWalletShares) revert IncorrectPercentage();
-        walletTotalShares = walletTotalShares + newWalletShares - allocatedWalletShares;
+        walletTotalShares = newTotalShares + newWalletShares;
         shares[_walletAddress] = newWalletShares;
     }
 
@@ -113,8 +112,6 @@ contract WalletShare {
         public
         onlyOwner
     {
-        if (_newPercentage.percentageNumber / 10 ** _newPercentage.decimalPlaces >= 100) revert IncorrectPercentage();
-
         removeWalletShareM1(_walletAddress);
         addWalletShare(_walletAddress, _newPercentage);
     }
@@ -131,8 +128,6 @@ contract WalletShare {
         public
         onlyOwner
     {
-        if (_newPercentage.percentageNumber / 10 ** _newPercentage.decimalPlaces >= 100) revert IncorrectPercentage();
-
         removeWalletShareM2(_walletAddress);
         addWalletShare(_walletAddress, _newPercentage);
     }
