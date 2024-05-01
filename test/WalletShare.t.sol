@@ -59,6 +59,22 @@ contract WalletShareTest is PRBTest, StdCheats {
         assertEq(actualTotalShares, 125_000);
     }
 
+    function test_WalletReverts_100PercentAllocation() public {
+        uint256 bobWalletSharesBefore = walletShare.shares(bobWallet);
+        DataTypes.Percentage memory percentAllocation = DataTypes.Percentage({ percentageNumber: 100, decimalPlaces: 0 });
+
+        vm.prank(adminWallet);
+        vm.expectRevert();
+        walletShare.addWalletShare(bobWallet, percentAllocation);
+        uint256 expectedAllocationShares = 0;
+        uint256 bobWalletSharesAfter = walletShare.shares(bobWallet);
+        uint256 actualTotalShares = walletShare.walletTotalShares();
+
+        assertEq(bobWalletSharesBefore, 0);
+        assertEq(bobWalletSharesAfter, expectedAllocationShares);
+        assertEq(actualTotalShares, 100_000);
+    }
+
     function test_WalletGets_50PercentAllocation() public {
         // bob wallet gets allocated 20% shares i.e. 25k
         test_WalletGets_20PercentAllocation();
