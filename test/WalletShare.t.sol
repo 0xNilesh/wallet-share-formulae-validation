@@ -3,6 +3,7 @@ pragma solidity >=0.8.23 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 import { WalletShare } from "../src/WalletShare.sol";
 import { DataTypes } from "../src/libs/Datatypes.sol";
@@ -304,5 +305,24 @@ contract WalletShareTest is PRBTest, StdCheats {
 
         vm.prank(adminWallet);
         walletShare.decreaseWalletSharesM2(_walletAddress, _newPercentage);
+    }
+
+    function test_MaxDecimalAmount () public view {
+        // fixed at most 10 decimal places
+        // percentage = 10.1111111111
+        DataTypes.Percentage memory _percentage = DataTypes.Percentage({
+            percentageNumber: 101111111111,
+            decimalPlaces: 10
+        });
+
+        for (uint256 i=1; i<50; i++) {
+            uint256 shares = walletShare.getSharesAmount({
+                _totalShares: 10 ** i,
+                _percentage: _percentage
+            });
+            console2.log("totalShares = ", i);
+            console2.log(shares/1e18);
+            console2.log("");
+        }
     }
 }

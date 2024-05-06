@@ -37,7 +37,7 @@ contract WalletShare {
         returns (uint256 sharesToBeAllocated)
     {
         if (_percentage.percentageNumber / 10 ** _percentage.decimalPlaces >= 100) revert IncorrectPercentage();
-        sharesToBeAllocated = (_percentage.percentageNumber * _totalShares)
+        sharesToBeAllocated = (_percentage.percentageNumber * _totalShares) * 1e18
             / ((100 * (10 ** _percentage.decimalPlaces)) - _percentage.percentageNumber);
     }
 
