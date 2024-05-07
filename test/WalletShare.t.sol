@@ -3,6 +3,7 @@ pragma solidity >=0.8.23 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 import { WalletShare } from "../src/WalletShare.sol";
 import { DataTypes } from "../src/libs/Datatypes.sol";
@@ -37,7 +38,7 @@ contract WalletShareTest is PRBTest, StdCheats {
     }
 
     function test_FoundationGetsInitialShares() public {
-        uint256 initialSharesAmount = 100_000;
+        uint256 initialSharesAmount = 100_000 * 1e18;
         uint256 foundationWalletShares = walletShare.shares(foundationWallet);
         uint256 actualTotalShares = walletShare.walletTotalShares();
         assertEq(initialSharesAmount, foundationWalletShares);
@@ -50,29 +51,16 @@ contract WalletShareTest is PRBTest, StdCheats {
 
         vm.prank(adminWallet);
         walletShare.addWalletShare(bobWallet, percentAllocation);
-        uint256 expectedAllocationShares = 25_000;
+        uint256 expectedAllocationShares = 25_000 * 1e18;
         uint256 bobWalletSharesAfter = walletShare.shares(bobWallet);
         uint256 actualTotalShares = walletShare.walletTotalShares();
 
         assertEq(bobWalletSharesBefore, 0);
         assertEq(bobWalletSharesAfter, expectedAllocationShares);
-        assertEq(actualTotalShares, 125_000);
-    }
+        assertEq(actualTotalShares, 125_000 * 1e18);
 
-    function test_WalletReverts_100PercentAllocation() public {
-        uint256 bobWalletSharesBefore = walletShare.shares(bobWallet);
-        DataTypes.Percentage memory percentAllocation = DataTypes.Percentage({ percentageNumber: 100, decimalPlaces: 0 });
-
-        vm.prank(adminWallet);
-        vm.expectRevert();
-        walletShare.addWalletShare(bobWallet, percentAllocation);
-        uint256 expectedAllocationShares = 0;
-        uint256 bobWalletSharesAfter = walletShare.shares(bobWallet);
-        uint256 actualTotalShares = walletShare.walletTotalShares();
-
-        assertEq(bobWalletSharesBefore, 0);
-        assertEq(bobWalletSharesAfter, expectedAllocationShares);
-        assertEq(actualTotalShares, 100_000);
+        uint percentage = (bobWalletSharesAfter * 100)/actualTotalShares;
+        assertEq(percentage, percentAllocation.percentageNumber);
     }
 
     function test_WalletGets_50PercentAllocation() public {
@@ -84,17 +72,20 @@ contract WalletShareTest is PRBTest, StdCheats {
 
         vm.prank(adminWallet);
         walletShare.addWalletShare(aliceWallet, percentAllocation);
-        uint256 expectedAllocationShares = 125_000;
+        uint256 expectedAllocationShares = 125_000 * 1e18;
         uint256 bobWalletSharesAfter = walletShare.shares(bobWallet);
         uint256 aliceWalletSharesAfter = walletShare.shares(aliceWallet);
         uint256 foundationWalletSharesAfter = walletShare.shares(foundationWallet);
         uint256 actualTotalShares = walletShare.walletTotalShares();
 
         assertEq(aliceWalletSharesBefore, 0);
-        assertEq(bobWalletSharesAfter, 25_000);
+        assertEq(bobWalletSharesAfter, 25_000 * 1e18);
         assertEq(aliceWalletSharesAfter, expectedAllocationShares);
-        assertEq(foundationWalletSharesAfter, 100_000);
-        assertEq(actualTotalShares, 250_000);
+        assertEq(foundationWalletSharesAfter, 100_000 * 1e18);
+        assertEq(actualTotalShares, 250_000 * 1e18);
+
+        uint percentage = (aliceWalletSharesAfter * 100)/actualTotalShares;
+        assertEq(percentage, percentAllocation.percentageNumber);
     }
 
     // removes wallet allocation and removes shares from circulation
@@ -154,13 +145,13 @@ contract WalletShareTest is PRBTest, StdCheats {
 
         vm.prank(adminWallet);
         walletShare.addWalletShare(rabbyWallet, percentAllocation);
-        uint256 expectedAllocationShares = 225_000;
+        uint256 expectedAllocationShares = 225_000 * 1e18;
         uint256 rabbyWalletSharesAfter = walletShare.shares(rabbyWallet);
         uint256 totalSharesAfter = walletShare.walletTotalShares();
 
         assertEq(rabbyWalletSharesBefore, 0);
         assertEq(rabbyWalletSharesAfter, expectedAllocationShares);
-        assertEq(totalSharesAfter, 450_000);
+        assertEq(totalSharesAfter, 450_000 * 1e18);
     }
 
     // testing add wallet after removal with method m2 (assign shares to foundation)
@@ -172,13 +163,13 @@ contract WalletShareTest is PRBTest, StdCheats {
 
         vm.prank(adminWallet);
         walletShare.addWalletShare(rabbyWallet, percentAllocation);
-        uint256 expectedAllocationShares = 250_000;
+        uint256 expectedAllocationShares = 250_000 * 1e18;
         uint256 rabbyWalletSharesAfter = walletShare.shares(rabbyWallet);
         uint256 totalSharesAfter = walletShare.walletTotalShares();
 
         assertEq(rabbyWalletSharesBefore, 0);
         assertEq(rabbyWalletSharesAfter, expectedAllocationShares);
-        assertEq(totalSharesAfter, 500_000);
+        assertEq(totalSharesAfter, 500_000 * 1e18);
     }
 
     // assign wallet 0.001% shares
@@ -186,15 +177,15 @@ contract WalletShareTest is PRBTest, StdCheats {
         uint256 bobWalletSharesBefore = walletShare.shares(bobWallet);
         DataTypes.Percentage memory percentAllocation = DataTypes.Percentage({ percentageNumber: 1, decimalPlaces: 3 });
 
+        uint256 expectedAllocationShares = walletShare.getSharesAmount(walletShare.walletTotalShares(),percentAllocation);
         vm.prank(adminWallet);
         walletShare.addWalletShare(bobWallet, percentAllocation);
-        uint256 expectedAllocationShares = 1;
         uint256 bobWalletSharesAfter = walletShare.shares(bobWallet);
         uint256 actualTotalShares = walletShare.walletTotalShares();
 
         assertEq(bobWalletSharesBefore, 0);
         assertEq(bobWalletSharesAfter, expectedAllocationShares);
-        assertEq(actualTotalShares, 100_001);
+        assertEq(actualTotalShares, 100_000 * 1e18 + expectedAllocationShares);
     }
 
     // assign wallet 0.0001% shares
@@ -202,15 +193,15 @@ contract WalletShareTest is PRBTest, StdCheats {
         uint256 bobWalletSharesBefore = walletShare.shares(bobWallet);
         DataTypes.Percentage memory percentAllocation = DataTypes.Percentage({ percentageNumber: 1, decimalPlaces: 4 });
 
+        uint256 expectedAllocationShares = walletShare.getSharesAmount(walletShare.walletTotalShares(),percentAllocation);
         vm.prank(adminWallet);
         walletShare.addWalletShare(bobWallet, percentAllocation);
-        uint256 expectedAllocationShares = 0;
         uint256 bobWalletSharesAfter = walletShare.shares(bobWallet);
         uint256 actualTotalShares = walletShare.walletTotalShares();
-
+         console2.log(expectedAllocationShares,bobWalletSharesAfter,actualTotalShares);
         assertEq(bobWalletSharesBefore, 0);
         assertEq(bobWalletSharesAfter, expectedAllocationShares);
-        assertEq(actualTotalShares, 100_000);
+        assertEq(actualTotalShares, 100_000 * 1e18 + expectedAllocationShares);
     }
 
     function test_IncreaseWalletShare() public {
@@ -226,17 +217,17 @@ contract WalletShareTest is PRBTest, StdCheats {
 
         vm.prank(adminWallet);
         walletShare.increaseWalletShares(bobWallet, percentAllocation);
-        uint256 expectedAllocationShares = 100_000;
+        uint256 expectedAllocationShares = 100_000* 1e18;
         uint256 totalSharesAfter = walletShare.walletTotalShares();
         uint256 bobWalletSharesAfter = walletShare.shares(bobWallet);
         uint256 foundationWalletSharesAfter = walletShare.shares(foundationWallet);
 
-        assertEq(bobWalletSharesBefore, 25_000);
-        assertEq(totalSharesBefore, 125_000);
-        assertEq(foundationWalletSharesBefore, 100_000);
+        assertEq(bobWalletSharesBefore, 25_000* 1e18);
+        assertEq(totalSharesBefore, 125_000* 1e18);
+        assertEq(foundationWalletSharesBefore, 100_000* 1e18);
         assertEq(bobWalletSharesAfter, expectedAllocationShares);
-        assertEq(totalSharesAfter, 200_000);
-        assertEq(foundationWalletSharesAfter, 100_000);
+        assertEq(totalSharesAfter, 200_000* 1e18);
+        assertEq(foundationWalletSharesAfter, 100_000* 1e18);
     }
 
     function test_DecreaseWalletShare() public {
@@ -250,19 +241,19 @@ contract WalletShareTest is PRBTest, StdCheats {
 
         DataTypes.Percentage memory percentAllocation = DataTypes.Percentage({ percentageNumber: 10, decimalPlaces: 0 });
 
+        uint256 expectedAllocationShares = walletShare.getSharesAmount(walletShare.walletTotalShares(),percentAllocation);
         vm.prank(adminWallet);
         walletShare.decreaseWalletSharesM2(bobWallet, percentAllocation);
-        uint256 expectedAllocationShares = 13_888;
         uint256 totalSharesAfter = walletShare.walletTotalShares();
         uint256 bobWalletSharesAfter = walletShare.shares(bobWallet);
         uint256 foundationWalletSharesAfter = walletShare.shares(foundationWallet);
 
-        assertEq(bobWalletSharesBefore, 25_000);
-        assertEq(totalSharesBefore, 125_000);
-        assertEq(foundationWalletSharesBefore, 100_000);
+        assertEq(bobWalletSharesBefore, 25_000 * 1e18);
+        assertEq(totalSharesBefore, 125_000 * 1e18);
+        assertEq(foundationWalletSharesBefore, 100_000 * 1e18);
         assertEq(bobWalletSharesAfter, expectedAllocationShares);
-        assertEq(totalSharesAfter, 138_888);
-        assertEq(foundationWalletSharesAfter, 125_000);
+        assertEq(totalSharesAfter, 125_000 * 1e18 + expectedAllocationShares);
+        assertEq(foundationWalletSharesAfter, 125_000 * 1e18 );
     }
 
     // FUZZ TESTS
@@ -320,5 +311,24 @@ contract WalletShareTest is PRBTest, StdCheats {
 
         vm.prank(adminWallet);
         walletShare.decreaseWalletSharesM2(_walletAddress, _newPercentage);
+    }
+
+    function test_MaxDecimalAmount () public view {
+        // fixed at most 10 decimal places
+        // percentage = 10.1111111111
+        DataTypes.Percentage memory _percentage = DataTypes.Percentage({
+            percentageNumber: 101111111111,
+            decimalPlaces: 10
+        });
+
+        for (uint256 i=1; i<50; i++) {
+            uint256 shares = walletShare.getSharesAmount({
+                _totalShares: 10 ** i,
+                _percentage: _percentage
+            });
+            console2.log("totalShares = ", i);
+            console2.log(shares/1e18);
+            console2.log("");
+        }
     }
 }

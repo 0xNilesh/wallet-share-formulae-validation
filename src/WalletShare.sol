@@ -4,7 +4,7 @@ pragma solidity >=0.8.23;
 import { DataTypes } from "./libs/Datatypes.sol";
 
 contract WalletShare {
-    uint256 public walletTotalShares = 100_000;
+    uint256 public walletTotalShares = 100_000 * 1e18;
     mapping(address wallet => uint256 sharesAmount) public shares;
     address public immutable OWNER;
     address public immutable FOUNDATION;
@@ -36,10 +36,8 @@ contract WalletShare {
         pure
         returns (uint256 sharesToBeAllocated)
     {
-        //We will only need this check if we decide to out a threshold less than 100, otherwise it will by 
-        //default revert if passed hundred
-        // if (_percentage.percentageNumber> 100 && _percentage.decimalPlaces == 0 ) revert IncorrectPercentage();
-        sharesToBeAllocated = (_percentage.percentageNumber * _totalShares)
+        if (_percentage.percentageNumber / 10 ** _percentage.decimalPlaces >= 100) revert IncorrectPercentage();
+        sharesToBeAllocated = (_percentage.percentageNumber * _totalShares) 
             / ((100 * (10 ** _percentage.decimalPlaces)) - _percentage.percentageNumber);
     }
 
